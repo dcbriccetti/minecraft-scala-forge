@@ -1,5 +1,7 @@
 package com.davebsoft.minecraft.mods.misc
 
+import java.lang.NumberFormatException
+
 import com.davebsoft.minecraft.framework.{Chatting, CustomCommandBase}
 import net.minecraft.block.Block
 import net.minecraft.command.ICommandSender
@@ -16,11 +18,12 @@ case class StairsBuilder() extends CustomCommandBase("stairs", "s") with Chattin
   )
   def materialNames(sep: String = ", ") = blockPairs.keys.toSeq.sorted.mkString(sep)
   
-  override def getCommandUsage(sender: ICommandSender) = s"/$getCommandName <${materialNames(" | ")}>"
+  override def getCommandUsage(sender: ICommandSender) = getCommandUsage
+  private def getCommandUsage = s"/$getCommandName <${materialNames(" | ")}> <length> [slope]"
 
   override def processCommand(sender: ICommandSender, args: Array[String]): Unit = {
-    if (args.length != 1) {
-      sendErrorMessage(sender, "Invalid number of arguments")
+    if (args.length < 2 || args.length > 3) {
+      sendErrorMessage(sender, "Usage: " + getCommandUsage)
     } else {
       sender match {
         case player: EntityPlayer => 
@@ -29,12 +32,23 @@ case class StairsBuilder() extends CustomCommandBase("stairs", "s") with Chattin
             val cube = blockPair.cube
             val stairsBlock = blockPair.stair
             val pc = player.getPlayerCoordinates
-            0 to 9 foreach (i => {
-              val blockX = pc.posX + 1 + i
-              val blockZ = pc.posZ
-              0 to i - 1 foreach (j => world.setBlock(blockX, pc.posY + j, blockZ, cube))
-              world.setBlock(blockX, pc.posY + i, blockZ, stairsBlock)
-            })
+            try {
+              val slope = if (args.length == 3) args(2).toDouble else 1D
+              var levelReached = -1
+              0 to args(1).toInt - 1 foreach (i => {
+                val blockX = pc.posX + 1 + i
+                val blockZ = pc.posZ
+                val zHeight = (i * slope).toInt
+                val block = if (levelReached < zHeight) {
+                  levelReached += 1
+                  stairsBlock
+                } else cube
+                0 to zHeight - 1 foreach (j => world.setBlock(blockX, pc.posY + j, blockZ, cube)) 
+                world.setBlock(blockX, pc.posY + zHeight, blockZ, block)
+              })
+            } catch {
+              case e: NumberFormatException => sendErrorMessage(sender, "Invalid number")
+            }
           }) getOrElse {
             sendErrorMessage(sender, "Material must be one of " + materialNames())
           }
