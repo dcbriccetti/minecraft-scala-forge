@@ -1,14 +1,10 @@
 package com.davebsoft.minecraft.mods.misc
 
-import java.lang.NumberFormatException
-
 import com.davebsoft.minecraft.framework.{Chatting, CustomCommandBase}
 import net.minecraft.block.Block
 import net.minecraft.command.ICommandSender
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.init.Blocks
-
-import scala.annotation.tailrec
 
 case class StairsBuilder() extends CustomCommandBase("stairs", "s") with Chatting {
   case class MaterialPair(cube: Block, stair: Block)
@@ -43,7 +39,7 @@ case class StairsBuilder() extends CustomCommandBase("stairs", "s") with Chattin
                 val height = (columnIndex * slope).toInt
                 val newLevel = heightReached < height
                 val block = if (newLevel) stairsBlock else cube
-                0 to height - 1 foreach (j => world.setBlock(blockX, pc.posY + j, pc.posZ, cube))
+                0 to height - 1 foreach(yOffset => world.setBlock(blockX, pc.posY + yOffset, pc.posZ, cube))
                 world.setBlock(blockX, pc.posY + height, pc.posZ, block)
                 if (columnIndex < staircaseLength - 1)
                   placeColumn(columnIndex + 1, heightReached + (if (newLevel) 1 else 0))
