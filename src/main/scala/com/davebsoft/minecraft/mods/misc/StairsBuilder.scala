@@ -8,6 +8,8 @@ import net.minecraft.command.ICommandSender
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.init.Blocks
 
+import scala.annotation.tailrec
+
 case class StairsBuilder() extends CustomCommandBase("stairs", "s") with Chatting {
   case class MaterialPair(cube: Block, stair: Block)
   val blockPairs = Map(
@@ -34,18 +36,20 @@ case class StairsBuilder() extends CustomCommandBase("stairs", "s") with Chattin
             val pc = player.getPlayerCoordinates
             try {
               val slope = if (args.length == 3) args(2).toDouble else 1D
-              var levelReached = -1
-              0 to args(1).toInt - 1 foreach (i => {
-                val blockX = pc.posX + 1 + i
-                val blockZ = pc.posZ
-                val zHeight = (i * slope).toInt
-                val block = if (levelReached < zHeight) {
-                  levelReached += 1
-                  stairsBlock
-                } else cube
-                0 to zHeight - 1 foreach (j => world.setBlock(blockX, pc.posY + j, blockZ, cube)) 
-                world.setBlock(blockX, pc.posY + zHeight, blockZ, block)
-              })
+              val staircaseLength = args(1).toInt
+              
+              def placeColumn(columnIndex: Int, heightReached: Int): Unit = {
+                val blockX = pc.posX + 1 + columnIndex
+                val height = (columnIndex * slope).toInt
+                val newLevel = heightReached < height
+                val block = if (newLevel) stairsBlock else cube
+                0 to height - 1 foreach (j => world.setBlock(blockX, pc.posY + j, pc.posZ, cube))
+                world.setBlock(blockX, pc.posY + height, pc.posZ, block)
+                if (columnIndex < staircaseLength - 1)
+                  placeColumn(columnIndex + 1, heightReached + (if (newLevel) 1 else 0))
+              }
+              
+              placeColumn(0, -1)
             } catch {
               case e: NumberFormatException => sendErrorMessage(sender, "Invalid number")
             }
