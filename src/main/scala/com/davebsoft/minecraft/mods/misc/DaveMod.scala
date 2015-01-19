@@ -23,6 +23,6 @@ object DaveMod extends McMod {
 
   @EventHandler
   def serverInit(event: FMLServerStartingEvent): Unit = {
-    event.registerServerCommand(MultiSpawn())
+    Seq(MultiSpawn(), StairsBuilder()).map(event.registerServerCommand)
   }
 }
