@@ -27,8 +27,6 @@ case class StairsBuilder() extends CustomCommandBase("stairs", "s") with Chattin
         case player: EntityPlayer => 
           val world = player.worldObj
           blockPairs.get(args(0)).map(blockPair => {
-            val cube = blockPair.cube
-            val stairsBlock = blockPair.stair
             val pc = player.getPlayerCoordinates
             try {
               val slope = if (args.length == 3) args(2).toDouble else 1D
@@ -43,8 +41,10 @@ case class StairsBuilder() extends CustomCommandBase("stairs", "s") with Chattin
                 val blockX = pc.posX + 1 + columnIndex
                 val height = (columnIndex * slope).toInt
                 val newLevel = heightReached < height
-                0 to height - 1 foreach(yOffset => setBlockIfAir(blockX, pc.posY + yOffset, pc.posZ, cube))
-                setBlockIfAir(blockX, pc.posY + height, pc.posZ, if (newLevel) stairsBlock else cube)
+                0 to height - 1 foreach(yOffset => 
+                  setBlockIfAir(blockX, pc.posY + yOffset, pc.posZ, blockPair.cube))
+                val topBlock = if (newLevel) blockPair.stair else blockPair.cube
+                setBlockIfAir(blockX, pc.posY + height, pc.posZ, topBlock)
                 if (columnIndex < staircaseLength - 1)
                   placeColumn(columnIndex + 1, heightReached + (if (newLevel) 1 else 0))
               }
