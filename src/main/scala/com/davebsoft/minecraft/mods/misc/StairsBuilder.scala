@@ -39,13 +39,13 @@ case class StairsBuilder() extends CustomCommandBase("stairs", "s") with Chattin
               
               def placeColumn(columnIndex: Int): Unit = {
                 val blockX = pc.posX + 1 + columnIndex
-                def h(i: Int) = (i * slope).toInt
+                def h(i: Int) = math.floor(i * slope).toInt
                 val height = h(columnIndex)
                 val lastHeight = h(columnIndex - 1)
-                0 to height - 1 foreach(yOffset =>
-                  setBlockIfAir(blockX, pc.posY + yOffset, pc.posZ, blockPair.cube))
-                val topBlock = if (height > lastHeight) blockPair.stair else blockPair.cube
-                setBlockIfAir(blockX, pc.posY + height, pc.posZ, topBlock)
+                0 to height foreach(yOffset => {
+                  val block = if (yOffset <= lastHeight) blockPair.cube else blockPair.stair
+                  setBlockIfAir(blockX, pc.posY + yOffset, pc.posZ, block)
+                })
               }
               
               0 until staircaseLength foreach placeColumn
