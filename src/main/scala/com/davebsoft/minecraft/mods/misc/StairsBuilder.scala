@@ -7,14 +7,14 @@ import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.init.Blocks
 
 case class StairsBuilder() extends CustomCommandBase("stairs", "s") with Chatting {
-  case class MaterialPair(cube: Block, stair: Block)
-  val blockPairs = Map(
+  private case class MaterialPair(cube: Block, stair: Block)
+  private val blockPairs = Map(
     "brick"     -> MaterialPair(Blocks.brick_block,   Blocks.brick_stairs),
     "quartz"    -> MaterialPair(Blocks.quartz_block,  Blocks.quartz_stairs),
     "sandstone" -> MaterialPair(Blocks.sandstone,     Blocks.sandstone_stairs),
     "stone"     -> MaterialPair(Blocks.stone,         Blocks.stone_stairs)
   )
-  def materialNames(sep: String = ", ") = blockPairs.keys.toSeq.sorted.mkString(sep)
+  private def materialNames(sep: String = ", ") = blockPairs.keys.toSeq.sorted.mkString(sep)
   
   override def getCommandUsage(sender: ICommandSender) = getCommandUsage
   private def getCommandUsage = s"/$getCommandName <${materialNames(" | ")}> <length> [slope]"
@@ -37,19 +37,18 @@ case class StairsBuilder() extends CustomCommandBase("stairs", "s") with Chattin
                   world.setBlock(x, y, z, block)
               }
               
-              def placeColumn(columnIndex: Int, heightReached: Int): Unit = {
+              def placeColumn(columnIndex: Int): Unit = {
                 val blockX = pc.posX + 1 + columnIndex
-                val height = (columnIndex * slope).toInt
-                val newLevel = heightReached < height
-                0 to height - 1 foreach(yOffset => 
+                def h(i: Int) = (i * slope).toInt
+                val height = h(columnIndex)
+                val lastHeight = h(columnIndex - 1)
+                0 to height - 1 foreach(yOffset =>
                   setBlockIfAir(blockX, pc.posY + yOffset, pc.posZ, blockPair.cube))
-                val topBlock = if (newLevel) blockPair.stair else blockPair.cube
+                val topBlock = if (height > lastHeight) blockPair.stair else blockPair.cube
                 setBlockIfAir(blockX, pc.posY + height, pc.posZ, topBlock)
-                if (columnIndex < staircaseLength - 1)
-                  placeColumn(columnIndex + 1, heightReached + (if (newLevel) 1 else 0))
               }
               
-              placeColumn(0, -1)
+              0 until staircaseLength foreach placeColumn
             } catch {
               case e: NumberFormatException => sendErrorMessage(sender, "Invalid number")
             }
